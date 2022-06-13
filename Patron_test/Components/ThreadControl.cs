@@ -2,11 +2,11 @@
 {
     public class ThreadControl
     {
-        public Dictionary<string, object> Tasks = new Dictionary<string, object>();
+        public Dictionary<string, ThreadControlCallback> Tasks = new Dictionary<string, ThreadControlCallback>();
 
-        public object GetThreadControlCallback(string filename)
+        public ThreadControlCallback GetThreadControlCallback(string filename)
         {
-            object value;
+            ThreadControlCallback value;
             lock (Tasks)
             {
                 if (Tasks.ContainsKey(filename))
@@ -15,9 +15,9 @@
                 }
                 else
                 {
-                    object o = new();
-                    Tasks.Add(filename, o);
-                    value = o;
+                    ThreadControlCallback tcc = new(filename);
+                    Tasks.Add(filename, tcc);
+                    value = tcc;
                 }
             }
             return value;

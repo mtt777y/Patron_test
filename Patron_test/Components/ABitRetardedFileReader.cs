@@ -9,7 +9,6 @@ namespace Patron_test.Components
         private readonly string _baseDir;
         private readonly ILogger _logger;
         private readonly ThreadControl _threadControl;
-        private object locker;
 
         public ABitRetardedFileReader(string filename, string baseDir, ILogger logger, ThreadControl threadControl)
         {
@@ -17,7 +16,6 @@ namespace Patron_test.Components
             _baseDir = baseDir;
             _logger = logger;
             _threadControl = threadControl;
-            locker = new object();
         }
 
         public static string StartAndCallback(string filename, string baseDir, ILogger logger, ThreadControl threadControl)
@@ -31,21 +29,32 @@ namespace Patron_test.Components
             string result = "";
             try
             {
-                object locker = _threadControl.GetThreadControlCallback(_filename);
-                lock(locker)
+                ThreadControlCallback tcc = _threadControl.GetThreadControlCallback(_filename);
+                
+                lock (tcc.Locker)
                 {
-                    Task task = Task.Run(() => Task.Delay(2000).Wait());
-
-                    _logger.LogDebug($"Start readind {_filename}...");
-                    using (StreamReader sr = new StreamReader($"{_baseDir}Resourses\\{_filename}"))
+                    if (!tcc.HasReaded)
                     {
-                        result = sr.ReadToEnd();
-                        sr.Close();
-                    }
-                    _logger.LogDebug($"End readind {_filename}!");
+                        Task task = Task.Delay(2000);
+                        task.Start();
 
-                    task.Wait();
+                        _logger.LogDebug($"Start readind {_filename}...");
+                        using (StreamReader sr = new StreamReader($"{_baseDir}Resourses\\{_filename}"))
+                        {
+                            sr.ReadToEnd();
+                            result = tcc.Value;
+                        }
+                        _logger.LogDebug($"End readind {_filename}!");
+
+                        tcc.HasReaded = true;
+                        task.Wait();
+                    }
+                    else
+                    {
+                        result = tcc.Value;
+                    }
                 }
+               
             }
             catch (Exception e)
             {
