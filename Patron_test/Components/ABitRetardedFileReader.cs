@@ -36,7 +36,6 @@ namespace Patron_test.Components
                     if (!tcc.HasReaded)
                     {
                         Task task = Task.Delay(2000);
-                        task.Start();
 
                         _logger.LogDebug($"Start readind {_filename}...");
                         using (StreamReader sr = new StreamReader($"{_baseDir}Resourses\\{_filename}"))
@@ -58,7 +57,8 @@ namespace Patron_test.Components
             }
             catch (Exception e)
             {
-                Console.WriteLine("Exception: " + e.Message);
+                _logger.LogError(e.Message);
+                //Console.WriteLine("Exception: " + e.Message);
             }
 
             return result;
